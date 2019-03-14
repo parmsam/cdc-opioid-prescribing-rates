@@ -74,7 +74,7 @@ CountyName=paste(CountyOnly,StateOnly,sep=", ")
 #Would you like to output a plot for the selected county(ChooseOut='county') 
 #or for the selected state(ChooseOut='state')
 #or for all US (ChooseOut='USA')?
-ChooseOut='USA'
+ChooseOut='county'
 #What is your year range of interest?
 year1=2006
 year2=2017
@@ -281,7 +281,7 @@ plotFunc<-function(pickGeo) {
       geom_line(alpha=1,color='black', group=1) +
       labs(x = "Year",y="Estimated Rate", 
            title=titleState,
-           subtitle = paste(RequestID,"; ", DataSource,sep=""),
+           subtitle = paste(RequestID,"; ", DataSource, ": IQVIA Xponent 2006–2017", sep=""),
            caption = infoURL) + ggrepel::geom_text_repel(aes(label=value),show.legend=F);
     gg_IN
   }
@@ -294,7 +294,7 @@ plotFunc<-function(pickGeo) {
       geom_line(alpha=1,color='black', group=1) +
       labs(x = "Year",y="Estimated Rate", 
            title=titleCounty,
-           subtitle = paste(RequestID,"; ", DataSource, sep=""),
+           subtitle = paste(RequestID,"; ", DataSource, ": IQVIA Xponent 2006–2017", sep=""),
            caption = infoURL) + ggrepel::geom_text_repel(aes(label=Rate),show.legend=F)
     gg_MC
   }
@@ -307,7 +307,7 @@ plotFunc<-function(pickGeo) {
       geom_line(alpha=1,color='black', group=1) +
       labs(x = "Year",y="Estimated Rate", 
            title=titleUSA,
-           subtitle = paste(RequestID,"; ", DataSource, sep=""),
+           subtitle = paste(RequestID,"; ", DataSource, ": IQVIA Xponent 2006–2017", sep=""),
            caption = infoURL) + ggrepel::geom_text_repel(aes(label=Rate),show.legend=F)
     gg_USA
   }
