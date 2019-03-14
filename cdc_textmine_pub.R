@@ -21,15 +21,15 @@ DRdir <- paste("", FolderName, "/", sep = "")
 For this database, a prescription is an initial or refill prescription dispensed at a retail pharmacy in the sample 
 and paid for by commercial insurance, Medicaid, Medicare, or cash or its equivalent. This database does not include 
 mail order pharmacy data.
- b. For the calculation of prescribing rates, numerators are the total number of opioid prescriptions dispensed in a 
+b. For the calculation of prescribing rates, numerators are the total number of opioid prescriptions dispensed in a 
 given year, state, or county, as appropriate.  Annual resident population denominator estimates were obtained 
 from the U.S. Census Bureau.
- c. Opioid prescriptions, including buprenorphine, codeine, fentanyl, hydrocodone, hydromorphone, methadone, 
+c. Opioid prescriptions, including buprenorphine, codeine, fentanyl, hydrocodone, hydromorphone, methadone, 
 morphine, oxycodone, oxymorphone, propoxyphene, tapentadol, and tramadol, were identified using the 
 National Drug Code. Cough and cold formulations containing opioids and buprenorphine products typically 
 used to treat opioid use disorder were not included. In addition, methadone dispensed through methadone maintenance 
 treatment programs is not included in the IQVIA Xponent data.
- d. Table 2 ndisplays the percentage of counties in the United States that have opioid prescribing rates 
+d. Table 2 ndisplays the percentage of counties in the United States that have opioid prescribing rates 
 available for a given year. A lack of available data may indicate that the county had no retail pharmacies, 
 the county had no retail pharmacies sampled, or the prescription volume was erroneously attributed to an adjacent, 
 more populous county according to the sampling rules used."
@@ -68,11 +68,13 @@ StateName="Indiana"
 #also fill out the County Only and State only fields
 CountyOnly="Marion"
 StateOnly="IN"
+All_USA="USA"
 CountyName=paste(CountyOnly,StateOnly,sep=", ")
 
 #Would you like to output a plot for the selected county(ChooseOut='county') 
-#or for the selected state(ChooseOut='state')?
-ChooseOut='county'
+#or for the selected state(ChooseOut='state')
+#or for all US (ChooseOut='USA')?
+ChooseOut='USA'
 #What is your year range of interest?
 year1=2006
 year2=2017
@@ -81,12 +83,12 @@ year2=2017
 Save=1
 filePath="/Users/Sam/Documents/Programming/R_Prog/cdc_textmine/fullDat/"
 destPath<-paste(filePath, ChooseOut, '_OpioidRxData_',year1,"-",year2,'.csv', sep='')
-#Would you like to save the State or County-specfici Data as a CSV? Declare Save2=1 and declare destination path 
+#Would you like to save the State or County-filtered Data as a CSV? Declare Save2=1 and declare destination path 
 #(with forward slashes) in dpath
 Save2=1
 dPath<-paste("/Users/Sam/Documents/Programming/R_Prog/cdc_textmine/",
              ChooseOut,year1,"-",year2,"_data",sep='')
-#Would you like to save a graph with the State or County-specific data and declare the path in gPath? 
+#Would you like to save a graph with the State or County-specific or ALL-USA data and declare the path in gPath? 
 Save3=1
 gPath<-paste("/Users/Sam/Documents/Programming/R_Prog/cdc_textmine/",
              ChooseOut,year1,"-",year2,"_graph",sep='')
@@ -98,6 +100,11 @@ if(ChooseOut=='county'){
   dPath <- paste(dPath,"_",CountyOnly,"_",StateOnly,sep="")
   gPath <- paste(gPath,"_",CountyOnly,"_",StateOnly,sep="") 
 }
+if(ChooseOut=='USA'){
+  dPath <- paste(dPath,"_",All_USA,sep="")
+  gPath <- paste(gPath,"_",All_USA,sep="") 
+}
+
 #2) Read and parse HTML file ----
 
 #from: http://bradleyboehmke.github.io/2015/12/scraping-html-tables.html
@@ -122,22 +129,22 @@ my_webPull <- function(url) {
   }
   tbls_ls2 <- tbls_ls2%>% arrange(.[[2]],.[[1]]) 
   if (ncol(tbls_ls2)>3){
-     tbls_ls2 <- tbls_ls2 %>% mutate(Year=colnames(tbls_ls2[4]))
-   }  
+    tbls_ls2 <- tbls_ls2 %>% mutate(Year=colnames(tbls_ls2[4]))
+  }  
   return(tbls_ls2)
 }
 
 #tested function and it works
- # t2<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxstate2016.html")
- # View(t2)
+# t2<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxstate2016.html")
+# View(t2)
 # t3<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxcounty2016.html")
 # View(t3)
 # t4<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxstate2017.html")
 # View(t4)
 # t5<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxcounty2017.html")
 # View(t5)
- # t3<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxcounty2007.html")
- # View(t3)
+# t3<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxcounty2007.html")
+# View(t3)
 
 # urls have commmon patterns .../rxstate2016, /rxstate2015, etc
 # so get a table of the urls using a the base and generating the pattern for both county and state
@@ -180,9 +187,17 @@ if(ChooseOut=='state'){
   All_StateData<-lapply(state_url, my_webPull)
   All_StateData<-data.frame(All_StateData)
 }
+
 #All_CountyData %>% View()
 
-#now have datasets for state data (All_StateData) OR county data (All_CountyData). 
+if (ChooseOut=='USA'){
+  All_US<-my_webPull("https://www.cdc.gov/drugoverdose/maps/rxrate-maps.html") 
+  All_US<-data.frame(All_US) %>% select(Year.1,Prescribing.Rate.Per.100.Persons,Total.Number.of.Prescriptions) %>% 
+    rename(Year=Year.1, Rate=Prescribing.Rate.Per.100.Persons, TotalNRX=Total.Number.of.Prescriptions) %>% 
+    mutate(Rate=as.numeric(as.character(Rate))) %>% arrange(Year)
+}
+
+#now have datasets for state data (All_StateData) OR county data (All_CountyData) OR all USA (All_US). 
 
 #3) Save ALL state or county data as a data frame in specified directory ----
 SaveDf<-function(Save,ChooseOut,destPath) {
@@ -195,10 +210,15 @@ SaveDf<-function(Save,ChooseOut,destPath) {
       All_StateData<- All_StateData %>% mutate_all(funs(type.convert(as.character(replace(., .=='–', NA)))))
       write_csv(All_StateData,path=destPath,na = "NA")   
     }
+    else if (ChooseOut=='USA'){
+      All_US<- All_US %>% mutate_all(funs(type.convert(as.character(replace(., .=='-', NA)))))
+      write_csv(All_US,path=destPath,na = "NA")   
+    }
   }
 }
 
 SaveDf(Save, ChooseOut, destPath)
+
 #4)  Filter by State name and County name ----
 if (ChooseOut=='state'){
   StateData<-All_StateData %>% filter(State==StateName)
@@ -247,6 +267,10 @@ if (ChooseOut=='county'){
   titleCounty <- paste("Estimated Rate of Opioid Prescriptions per 100 U.S. Residents by Year,", 
                        CountyData[1,1], "(County, State)")
 }
+if (ChooseOut=='USA'){
+  All_US$Year <- factor(All_US$Year, levels =All_US$Year)
+  titleUSA<- paste("Estimated Rate of Opioid Prescriptions per 100 U.S. Residents by Year,","USA")
+}
 plotFunc<-function(pickGeo) {
   if (pickGeo=='state'){
     dataset<-StateData %>% mutate(value=as.numeric(value))
@@ -273,11 +297,25 @@ plotFunc<-function(pickGeo) {
            subtitle = paste(RequestID,"; ", DataSource, sep=""),
            caption = infoURL) + ggrepel::geom_text_repel(aes(label=Rate),show.legend=F)
     gg_MC
-  }}
+  }
+  else if (pickGeo=='USA'){
+    dataset<-All_US %>% mutate(Rate=as.numeric(as.character(Rate)))
+    gg_USA<-ggplot(data = dataset,aes(x=Year,y=Rate))+
+      geom_point()+ 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+      #scale_y_continuous(breaks=seq(round(min(dataset$Rate))-15,round(max(dataset$Rate))+15,5))+
+      geom_line(alpha=1,color='black', group=1) +
+      labs(x = "Year",y="Estimated Rate", 
+           title=titleUSA,
+           subtitle = paste(RequestID,"; ", DataSource, sep=""),
+           caption = infoURL) + ggrepel::geom_text_repel(aes(label=Rate),show.legend=F)
+    gg_USA
+  }
+}
 a<-plotFunc(ChooseOut);a
 
 if (Save3==1) {
-ggsave(a,filename=paste(gPath,".png",sep=""), width = 9, height = 4, dpi = 500, units = "in", device='png')
+  ggsave(a,filename=paste(gPath,".png",sep=""), width = 9, height = 4, dpi = 500, units = "in", device='png')
 }
 
 #  X) Clean up.
