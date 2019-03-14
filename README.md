@@ -6,3 +6,4 @@ HTML scraping from CDC public data tables to obtain opioid prescription rates da
 * Stores data in the specified directory as an excel file
 * Plots opioid Rx rates across years based on specified filters 
 
+Generated plots, filtered data, and full data stored in repo.
